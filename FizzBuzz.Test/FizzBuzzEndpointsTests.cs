@@ -2,6 +2,7 @@ using FizzBuzz.Application;
 using FizzBuzz.Domain;
 using FizzBuzz.Infrastructure;
 using FizzBuzz.Presentation;
+using FizzBuzz.Presentation.FizzBuzz;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Shouldly;

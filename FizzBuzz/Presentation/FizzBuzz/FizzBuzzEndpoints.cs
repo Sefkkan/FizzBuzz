@@ -1,7 +1,7 @@
 using FizzBuzz.Application;
 using FizzBuzz.Domain;
 
-namespace FizzBuzz.Presentation;
+namespace FizzBuzz.Presentation.FizzBuzz;
 
 public static class FizzBuzzEndpoints
 {

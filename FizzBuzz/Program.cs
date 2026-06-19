@@ -1,5 +1,7 @@
 using FizzBuzz;
 using FizzBuzz.Presentation;
+using FizzBuzz.Presentation.FizzBuzz;
+using FizzBuzz.Presentation.Statistics;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);

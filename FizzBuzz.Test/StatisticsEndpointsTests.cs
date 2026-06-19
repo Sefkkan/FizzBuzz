@@ -1,6 +1,7 @@
 using FizzBuzz.Domain;
 using FizzBuzz.Infrastructure;
 using FizzBuzz.Presentation;
+using FizzBuzz.Presentation.Statistics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Shouldly;
@@ -33,7 +34,9 @@ public class StatisticsEndpointsTests
         var ok = result.ShouldBeOfType<Ok<List<StatisticsResponse>>>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         ok.Value.ShouldHaveSingleItem()
-            .ShouldBe(new StatisticsResponse(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz", Hits: 2));
+            .ShouldBe(new StatisticsResponse(
+                new StatisticsRequestResponse(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz"),
+                Hits: 2));
     }
 
     [Fact]

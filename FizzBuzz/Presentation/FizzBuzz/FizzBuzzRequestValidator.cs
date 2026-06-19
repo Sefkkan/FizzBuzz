@@ -1,8 +1,8 @@
-namespace FizzBuzz.Presentation;
+namespace FizzBuzz.Presentation.FizzBuzz;
 
 public static class FizzBuzzRequestValidator
 {
-    public const int MaxLimit = 1_000_000;
+    private const int MaxLimit = 1_000_000;
 
     public static Dictionary<string, string[]> Validate(int int1, int int2, int limit, string? str1, string? str2)
     {

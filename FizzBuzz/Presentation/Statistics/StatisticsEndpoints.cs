@@ -1,6 +1,6 @@
 using FizzBuzz.Application;
 
-namespace FizzBuzz.Presentation;
+namespace FizzBuzz.Presentation.Statistics;
 
 public static class StatisticsEndpoints
 {
@@ -17,11 +17,12 @@ public static class StatisticsEndpoints
 
         var response = statistics
             .Select(statistic => new StatisticsResponse(
-                statistic.Request.Int1,
-                statistic.Request.Int2,
-                statistic.Request.Limit,
-                statistic.Request.Str1,
-                statistic.Request.Str2,
+                new StatisticsRequestResponse(
+                    statistic.Request.Int1,
+                    statistic.Request.Int2,
+                    statistic.Request.Limit,
+                    statistic.Request.Str1,
+                    statistic.Request.Str2),
                 statistic.Hits))
             .ToList();
 
