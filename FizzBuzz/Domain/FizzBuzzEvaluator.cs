@@ -1,6 +1,6 @@
 namespace FizzBuzz.Domain;
 
-public class FizzBuzzEvaluator
+public class FizzBuzzEvaluator : IFizzBuzzEvaluator
 {
     public string Evaluate(int number, FizzBuzzRequest request)
     {
