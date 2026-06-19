@@ -1,5 +1,6 @@
 using FizzBuzz.Application;
 using FizzBuzz.Domain;
+using FizzBuzz.Infrastructure;
 using FizzBuzz.Presentation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -9,7 +10,7 @@ namespace FizzBuzz.Test;
 
 public class FizzBuzzEndpointsTests
 {
-    private readonly IFizzBuzzUseCase _useCase = new FizzBuzzUseCase(new FizzBuzzService(new FizzBuzzEvaluator()));
+    private readonly IFizzBuzzUseCase _useCase = new FizzBuzzUseCase(new FizzBuzzService(new FizzBuzzEvaluator()), new InMemoryFizzBuzzStatisticsRepository());
 
     [Fact]
     public void Should_return_ok_with_sequence_when_request_is_valid()

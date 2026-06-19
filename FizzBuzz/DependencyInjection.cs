@@ -1,5 +1,6 @@
 using FizzBuzz.Application;
 using FizzBuzz.Domain;
+using FizzBuzz.Infrastructure;
 
 namespace FizzBuzz;
 
@@ -10,6 +11,8 @@ public static class DependencyInjection
         services.AddScoped<IFizzBuzzEvaluator, FizzBuzzEvaluator>();
         services.AddScoped<FizzBuzzService>();
         services.AddScoped<IFizzBuzzUseCase, FizzBuzzUseCase>();
+
+        services.AddSingleton<IFizzBuzzStatisticsRepository, InMemoryFizzBuzzStatisticsRepository>();
 
         return services;
     }

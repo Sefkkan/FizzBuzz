@@ -19,5 +19,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapFizzBuzzEndpoints();
+app.MapStatisticsEndpoints();
 
 app.Run();
