@@ -4,6 +4,8 @@ using FizzBuzz.Presentation;
 using FizzBuzz.Presentation.Statistics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 
 namespace FizzBuzz.Test;
@@ -11,11 +13,12 @@ namespace FizzBuzz.Test;
 public class StatisticsEndpointsTests
 {
     private readonly InMemoryFizzBuzzStatisticsRepository _statisticsRepository = new();
+    private readonly ILogger<StatisticsEndpointsLogger> _logger = NullLogger<StatisticsEndpointsLogger>.Instance;
 
     [Fact]
     public void Should_return_ok_with_empty_list_when_no_request_recorded()
     {
-        var result = StatisticsEndpoints.HandleStatistics(_statisticsRepository);
+        var result = StatisticsEndpoints.HandleStatistics(_statisticsRepository, _logger);
 
         var ok = result.ShouldBeOfType<Ok<List<StatisticsResponse>>>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
@@ -29,7 +32,7 @@ public class StatisticsEndpointsTests
         _statisticsRepository.Add(request);
         _statisticsRepository.Add(request);
 
-        var result = StatisticsEndpoints.HandleStatistics(_statisticsRepository);
+        var result = StatisticsEndpoints.HandleStatistics(_statisticsRepository, _logger);
 
         var ok = result.ShouldBeOfType<Ok<List<StatisticsResponse>>>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
@@ -47,7 +50,7 @@ public class StatisticsEndpointsTests
         _statisticsRepository.Add(first);
         _statisticsRepository.Add(second);
 
-        var result = StatisticsEndpoints.HandleStatistics(_statisticsRepository);
+        var result = StatisticsEndpoints.HandleStatistics(_statisticsRepository, _logger);
 
         var ok = result.ShouldBeOfType<Ok<List<StatisticsResponse>>>();
         ok.Value!.Count.ShouldBe(2);

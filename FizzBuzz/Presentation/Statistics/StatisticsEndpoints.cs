@@ -11,8 +11,12 @@ public static class StatisticsEndpoints
         return app;
     }
 
-    public static IResult HandleStatistics(IFizzBuzzStatisticsRepository statisticsRepository)
+    public static IResult HandleStatistics(
+        IFizzBuzzStatisticsRepository statisticsRepository,
+        ILogger<StatisticsEndpointsLogger> logger)
     {
+        logger.LogDebug("Statistics request received");
+
         var statistics = statisticsRepository.GetMostFrequent();
 
         var response = statistics
@@ -26,6 +30,10 @@ public static class StatisticsEndpoints
                 statistic.Hits))
             .ToList();
 
+        logger.LogInformation("Returning {Count} most frequent FizzBuzz request(s)", response.Count);
+
         return Results.Ok(response);
     }
 }
+
+public sealed class StatisticsEndpointsLogger;

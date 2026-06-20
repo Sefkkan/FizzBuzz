@@ -18,15 +18,28 @@ public static class FizzBuzzEndpoints
         int limit,
         string str1,
         string str2,
-        IFizzBuzzUseCase useCase)
+        IFizzBuzzUseCase useCase,
+        ILogger<FizzBuzzEndpointsLogger> logger)
     {
+        logger.LogDebug(
+            "FizzBuzz request received: Int1={Int1}, Int2={Int2}, Limit={Limit}, Str1={Str1}, Str2={Str2}",
+            int1, int2, limit, str1, str2);
+
         var result = FizzBuzzRequest.Create(int1, int2, limit, str1, str2);
         if (!result.IsSuccess)
         {
+            logger.LogWarning(
+                "FizzBuzz request validation failed for invalid fields: {InvalidFields}",
+                string.Join(", ", result.Errors.Keys));
             return Results.ValidationProblem(result.Errors);
         }
 
         var sequence = useCase.Execute(result.Value!);
+        logger.LogInformation(
+            "FizzBuzz sequence generated with {Count} entries for Limit={Limit}",
+            sequence.Count, limit);
         return Results.Ok(sequence);
     }
 }
+
+public sealed class FizzBuzzEndpointsLogger;
