@@ -19,7 +19,7 @@ try
 
     builder.Services.AddOpenApi(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
     builder.Services.AddProblemDetails();
-    builder.Services.AddFizzBuzz();
+    builder.Services.AddFizzBuzz(builder.Configuration);
 
     var app = builder.Build();
 

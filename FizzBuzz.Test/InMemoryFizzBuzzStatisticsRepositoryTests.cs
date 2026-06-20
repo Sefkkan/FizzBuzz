@@ -9,21 +9,21 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     private readonly InMemoryFizzBuzzStatisticsRepository _statisticsRepository = new();
 
     [Fact]
-    public void Should_return_empty_list_when_no_request_recorded()
+    public async Task Should_return_empty_list_when_no_request_recorded()
     {
-        _statisticsRepository.GetMostFrequent().ShouldBeEmpty();
+        (await _statisticsRepository.GetMostFrequentAsync()).ShouldBeEmpty();
     }
 
     [Fact]
-    public void Should_count_hits_for_repeated_identical_requests()
+    public async Task Should_count_hits_for_repeated_identical_requests()
     {
         var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
 
-        _statisticsRepository.Add(request);
-        _statisticsRepository.Add(request);
-        _statisticsRepository.Add(request);
+        await _statisticsRepository.AddAsync(request);
+        await _statisticsRepository.AddAsync(request);
+        await _statisticsRepository.AddAsync(request);
 
-        var result = _statisticsRepository.GetMostFrequent();
+        var result = await _statisticsRepository.GetMostFrequentAsync();
 
         var statistic = result.ShouldHaveSingleItem();
         statistic.Request.ShouldBe(request);
@@ -31,16 +31,16 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     }
 
     [Fact]
-    public void Should_return_only_the_most_frequent_request()
+    public async Task Should_return_only_the_most_frequent_request()
     {
         var frequent = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
         var rare = FizzBuzzRequest.Create(int1: 2, int2: 7, limit: 20, str1: "foo", str2: "bar").Value!;
 
-        _statisticsRepository.Add(frequent);
-        _statisticsRepository.Add(frequent);
-        _statisticsRepository.Add(rare);
+        await _statisticsRepository.AddAsync(frequent);
+        await _statisticsRepository.AddAsync(frequent);
+        await _statisticsRepository.AddAsync(rare);
 
-        var result = _statisticsRepository.GetMostFrequent();
+        var result = await _statisticsRepository.GetMostFrequentAsync();
 
         var statistic = result.ShouldHaveSingleItem();
         statistic.Request.ShouldBe(frequent);
@@ -48,17 +48,17 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     }
 
     [Fact]
-    public void Should_return_all_requests_when_they_are_tied()
+    public async Task Should_return_all_requests_when_they_are_tied()
     {
         var first = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
         var second = FizzBuzzRequest.Create(int1: 2, int2: 7, limit: 20, str1: "foo", str2: "bar").Value!;
 
-        _statisticsRepository.Add(first);
-        _statisticsRepository.Add(first);
-        _statisticsRepository.Add(second);
-        _statisticsRepository.Add(second);
+        await _statisticsRepository.AddAsync(first);
+        await _statisticsRepository.AddAsync(first);
+        await _statisticsRepository.AddAsync(second);
+        await _statisticsRepository.AddAsync(second);
 
-        var result = _statisticsRepository.GetMostFrequent();
+        var result = await _statisticsRepository.GetMostFrequentAsync();
 
         result.Count.ShouldBe(2);
         result.ShouldAllBe(statistic => statistic.Hits == 2);
@@ -66,15 +66,15 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     }
 
     [Fact]
-    public void Should_treat_requests_with_different_parameters_as_distinct()
+    public async Task Should_treat_requests_with_different_parameters_as_distinct()
     {
         var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
         var differentLimit = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 20, str1: "fizz", str2: "buzz").Value!;
 
-        _statisticsRepository.Add(request);
-        _statisticsRepository.Add(differentLimit);
+        await _statisticsRepository.AddAsync(request);
+        await _statisticsRepository.AddAsync(differentLimit);
 
-        var result = _statisticsRepository.GetMostFrequent();
+        var result = await _statisticsRepository.GetMostFrequentAsync();
 
         result.Count.ShouldBe(2);
     }

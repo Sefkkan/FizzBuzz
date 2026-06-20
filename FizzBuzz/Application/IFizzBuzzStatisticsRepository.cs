@@ -4,7 +4,7 @@ namespace FizzBuzz.Application;
 
 public interface IFizzBuzzStatisticsRepository
 {
-    void Add(FizzBuzzRequest request);
+    Task AddAsync(FizzBuzzRequest request, CancellationToken cancellationToken = default);
 
-    IReadOnlyList<FizzBuzzStatistic> GetMostFrequent();
+    Task<IReadOnlyList<FizzBuzzStatistic>> GetMostFrequentAsync(CancellationToken cancellationToken = default);
 }

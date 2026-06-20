@@ -11,13 +11,14 @@ public static class StatisticsEndpoints
         return app;
     }
 
-    public static IResult HandleStatistics(
+    public static async Task<IResult> HandleStatistics(
         IFizzBuzzStatisticsRepository statisticsRepository,
-        ILogger<StatisticsEndpointsLogger> logger)
+        ILogger<StatisticsEndpointsLogger> logger,
+        CancellationToken cancellationToken = default)
     {
         logger.LogDebug("Statistics request received");
 
-        var statistics = statisticsRepository.GetMostFrequent();
+        var statistics = await statisticsRepository.GetMostFrequentAsync(cancellationToken);
 
         var response = statistics
             .Select(statistic => new StatisticsResponse(

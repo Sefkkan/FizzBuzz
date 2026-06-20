@@ -19,12 +19,12 @@ public class FizzBuzzUseCase : IFizzBuzzUseCase
         _logger = logger;
     }
 
-    public List<string> Execute(FizzBuzzRequest request)
+    public async Task<List<string>> ExecuteAsync(FizzBuzzRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Executing FizzBuzz use case for Limit={Limit}", request.Limit);
 
         var result = _fizzBuzzService.GenerateSequence(request);
-        _statisticsRepository.Add(request);
+        await _statisticsRepository.AddAsync(request, cancellationToken);
 
         _logger.LogDebug("Statistics hit recorded for FizzBuzz request with Limit={Limit}", request.Limit);
         return result;

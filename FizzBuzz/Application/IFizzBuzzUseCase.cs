@@ -4,5 +4,5 @@ namespace FizzBuzz.Application;
 
 public interface IFizzBuzzUseCase
 {
-    List<string> Execute(FizzBuzzRequest request);
+    Task<List<string>> ExecuteAsync(FizzBuzzRequest request, CancellationToken cancellationToken = default);
 }

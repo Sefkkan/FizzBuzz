@@ -12,14 +12,15 @@ public static class FizzBuzzEndpoints
         return app;
     }
 
-    public static IResult HandleFizzBuzz(
+    public static async Task<IResult> HandleFizzBuzz(
         int int1,
         int int2,
         int limit,
         string str1,
         string str2,
         IFizzBuzzUseCase useCase,
-        ILogger<FizzBuzzEndpointsLogger> logger)
+        ILogger<FizzBuzzEndpointsLogger> logger,
+        CancellationToken cancellationToken = default)
     {
         logger.LogDebug(
             "FizzBuzz request received: Int1={Int1}, Int2={Int2}, Limit={Limit}, Str1={Str1}, Str2={Str2}",
@@ -34,7 +35,7 @@ public static class FizzBuzzEndpoints
             return Results.ValidationProblem(result.Errors);
         }
 
-        var sequence = useCase.Execute(result.Value!);
+        var sequence = await useCase.ExecuteAsync(result.Value!, cancellationToken);
         logger.LogInformation(
             "FizzBuzz sequence generated with {Count} entries for Limit={Limit}",
             sequence.Count, limit);
