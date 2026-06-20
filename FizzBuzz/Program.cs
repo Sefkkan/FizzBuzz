@@ -1,6 +1,7 @@
 using FizzBuzz;
 using FizzBuzz.Presentation.FizzBuzz;
 using FizzBuzz.Presentation.Statistics;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -29,6 +30,16 @@ try
     app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "FizzBuzz API"));
 
     app.UseHttpsRedirection();
+
+    app.MapHealthChecks("/health/live", new HealthCheckOptions
+    {
+        Predicate = _ => false
+    });
+
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready")
+    });
 
     var v1 = app.MapGroup("/api/v1").WithTags("v1");
     v1.MapFizzBuzzEndpoints();

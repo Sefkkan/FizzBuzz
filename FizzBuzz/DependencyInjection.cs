@@ -16,10 +16,18 @@ public static class DependencyInjection
         var redisConnectionString = configuration.GetConnectionString("Redis")
                                     ?? throw new InvalidOperationException("Missing 'Redis' connection string.");
 
+        var redisOptions = ConfigurationOptions.Parse(redisConnectionString);
+        redisOptions.AbortOnConnectFail = false;
+        redisOptions.ConnectTimeout = 2000;
+        redisOptions.ConnectRetry = 1;
+
         services.AddSingleton<IConnectionMultiplexer>(
-            _ => ConnectionMultiplexer.Connect(redisConnectionString));
+            _ => ConnectionMultiplexer.Connect(redisOptions));
 
         services.AddSingleton<IFizzBuzzStatisticsRepository, RedisFizzBuzzStatisticsRepository>();
+
+        services.AddHealthChecks()
+            .AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
 
         return services;
     }
