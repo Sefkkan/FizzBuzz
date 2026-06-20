@@ -1,0 +1,12 @@
+services:
+  fizzbuzz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fizzbuzz:latest
+    container_name: fizzbuzz
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_HTTP_PORTS: 8080
+    restart: unless-stopped

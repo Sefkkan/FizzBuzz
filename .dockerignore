@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/out/
+
+.git/
+.gitignore
+.vs/
+.idea//
+
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+FizzBuzz.Test/
+
+**/*.user
+README.md
