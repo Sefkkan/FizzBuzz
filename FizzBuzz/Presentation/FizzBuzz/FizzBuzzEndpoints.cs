@@ -1,5 +1,6 @@
 using FizzBuzz.Application;
 using FizzBuzz.Domain;
+using FizzBuzz.Presentation.Utils;
 
 namespace FizzBuzz.Presentation.FizzBuzz;
 
@@ -7,7 +8,9 @@ public static class FizzBuzzEndpoints
 {
     public static IEndpointRouteBuilder MapFizzBuzzEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/fizzbuzz", HandleFizzBuzz).WithName("GetFizzBuzz");
+        app.MapGet("/fizzbuzz", HandleFizzBuzz)
+            .WithName("GetFizzBuzz")
+            .RequireRateLimiting(RateLimiting.FizzBuzzPolicy);
 
         return app;
     }
