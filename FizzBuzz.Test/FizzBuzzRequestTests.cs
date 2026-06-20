@@ -5,41 +5,36 @@ namespace FizzBuzz.Test;
 
 public class FizzBuzzRequestTests
 {
-    [Fact]
-    public void Should_throw_when_int1_is_zero()
+    [Theory]
+    [InlineData(0, 5, 10, "fizz", "buzz", "int1")]
+    [InlineData(3, 0, 10, "fizz", "buzz", "int2")]
+    [InlineData(3, 5, -1, "fizz", "buzz", "limit")]
+    [InlineData(3, 5, 10, "", "buzz", "str1")]
+    [InlineData(3, 5, 10, "fizz", "", "str2")]
+    public void Should_fail_when_a_parameter_is_invalid(int int1, int int2, int limit, string str1, string str2, string expectedErrorKey)
     {
-        Should.Throw<ArgumentException>(() => new FizzBuzzRequest(Int1: 0, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz"));
+        var result = FizzBuzzRequest.Create(int1, int2, limit, str1, str2);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Errors.Keys.ShouldContain(expectedErrorKey);
     }
 
     [Fact]
-    public void Should_throw_when_int2_is_zero()
+    public void Should_fail_when_limit_exceeds_the_maximum()
     {
-        Should.Throw<ArgumentException>(() => new FizzBuzzRequest(Int1: 3, Int2: 0, Limit: 10, Str1: "fizz", Str2: "buzz"));
+        var result = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: FizzBuzzRequest.MaxLimit + 1, str1: "fizz", str2: "buzz");
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Errors.Keys.ShouldContain("limit");
     }
 
     [Fact]
-    public void Should_throw_when_limit_is_negative()
+    public void Should_succeed_when_all_parameters_are_valid()
     {
-        Should.Throw<ArgumentException>(() => new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: -1, Str1: "fizz", Str2: "buzz"));
-    }
+        var result = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz");
 
-    [Fact]
-    public void Should_throw_when_str1_is_empty()
-    {
-        Should.Throw<ArgumentException>(() => new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "", Str2: "buzz"));
-    }
-
-    [Fact]
-    public void Should_throw_when_str2_is_empty()
-    {
-        Should.Throw<ArgumentException>(() => new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: ""));
-    }
-
-    [Fact]
-    public void Should_create_request_when_all_parameters_are_valid()
-    {
-        var request = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz");
-
+        result.IsSuccess.ShouldBeTrue();
+        var request = result.Value.ShouldNotBeNull();
         request.Int1.ShouldBe(3);
         request.Int2.ShouldBe(5);
         request.Limit.ShouldBe(10);

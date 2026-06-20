@@ -17,7 +17,7 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     [Fact]
     public void Should_count_hits_for_repeated_identical_requests()
     {
-        var request = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz");
+        var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
 
         _statisticsRepository.Add(request);
         _statisticsRepository.Add(request);
@@ -33,8 +33,8 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     [Fact]
     public void Should_return_only_the_most_frequent_request()
     {
-        var frequent = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz");
-        var rare = new FizzBuzzRequest(Int1: 2, Int2: 7, Limit: 20, Str1: "foo", Str2: "bar");
+        var frequent = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
+        var rare = FizzBuzzRequest.Create(int1: 2, int2: 7, limit: 20, str1: "foo", str2: "bar").Value!;
 
         _statisticsRepository.Add(frequent);
         _statisticsRepository.Add(frequent);
@@ -50,8 +50,8 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     [Fact]
     public void Should_return_all_requests_when_they_are_tied()
     {
-        var first = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz");
-        var second = new FizzBuzzRequest(Int1: 2, Int2: 7, Limit: 20, Str1: "foo", Str2: "bar");
+        var first = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
+        var second = FizzBuzzRequest.Create(int1: 2, int2: 7, limit: 20, str1: "foo", str2: "bar").Value!;
 
         _statisticsRepository.Add(first);
         _statisticsRepository.Add(first);
@@ -68,8 +68,8 @@ public class InMemoryFizzBuzzStatisticsRepositoryTests
     [Fact]
     public void Should_treat_requests_with_different_parameters_as_distinct()
     {
-        var request = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 10, Str1: "fizz", Str2: "buzz");
-        var differentLimit = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 20, Str1: "fizz", Str2: "buzz");
+        var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 10, str1: "fizz", str2: "buzz").Value!;
+        var differentLimit = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 20, str1: "fizz", str2: "buzz").Value!;
 
         _statisticsRepository.Add(request);
         _statisticsRepository.Add(differentLimit);

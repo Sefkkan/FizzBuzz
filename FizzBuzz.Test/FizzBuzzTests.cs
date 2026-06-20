@@ -10,7 +10,7 @@ public class FizzBuzzTests
     [Fact]
     public void Should_return_correct_sequence_for_classic_fizzbuzz()
     {
-        var request = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 15, Str1: "fizz", Str2: "buzz");
+        var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 15, str1: "fizz", str2: "buzz").Value!;
 
         var result = _service.GenerateSequence(request);
 
@@ -20,7 +20,7 @@ public class FizzBuzzTests
     [Fact]
     public void Should_return_empty_list_when_limit_is_zero()
     {
-        var request = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: 0, Str1: "fizz", Str2: "buzz");
+        var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: 0, str1: "fizz", str2: "buzz").Value!;
 
         var result = _service.GenerateSequence(request);
 
@@ -34,7 +34,7 @@ public class FizzBuzzTests
     [InlineData(1,  "1")]
     public void Should_return_expected_result_for_number(int number, string expected)
     {
-        var request = new FizzBuzzRequest(Int1: 3, Int2: 5, Limit: number, Str1: "fizz", Str2: "buzz");
+        var request = FizzBuzzRequest.Create(int1: 3, int2: 5, limit: number, str1: "fizz", str2: "buzz").Value!;
 
         var result = _service.GenerateSequence(request);
 

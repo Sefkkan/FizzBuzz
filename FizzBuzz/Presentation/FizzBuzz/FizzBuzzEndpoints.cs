@@ -20,14 +20,13 @@ public static class FizzBuzzEndpoints
         string str2,
         IFizzBuzzUseCase useCase)
     {
-        var errors = FizzBuzzRequestValidator.Validate(int1, int2, limit, str1, str2);
-        if (errors.Count > 0)
+        var result = FizzBuzzRequest.Create(int1, int2, limit, str1, str2);
+        if (!result.IsSuccess)
         {
-            return Results.ValidationProblem(errors);
+            return Results.ValidationProblem(result.Errors);
         }
 
-        var request = new FizzBuzzRequest(int1, int2, limit, str1, str2);
-        var result = useCase.Execute(request);
-        return Results.Ok(result);
+        var sequence = useCase.Execute(result.Value!);
+        return Results.Ok(sequence);
     }
 }
