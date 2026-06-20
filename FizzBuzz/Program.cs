@@ -1,24 +1,46 @@
 using FizzBuzz;
-using FizzBuzz.Presentation;
 using FizzBuzz.Presentation.FizzBuzz;
 using FizzBuzz.Presentation.Statistics;
 using Microsoft.OpenApi;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddOpenApi(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
-builder.Services.AddProblemDetails();
-builder.Services.AddFizzBuzz();
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+    builder.Services.AddSerilog((services, configuration) => configuration
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
-app.MapOpenApi();
-app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "FizzBuzz API"));
+    builder.Services.AddOpenApi(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
+    builder.Services.AddProblemDetails();
+    builder.Services.AddFizzBuzz();
 
-app.UseHttpsRedirection();
+    var app = builder.Build();
 
-var v1 = app.MapGroup("/api/v1").WithTags("v1");
-v1.MapFizzBuzzEndpoints();
-v1.MapStatisticsEndpoints();
+    app.UseSerilogRequestLogging();
 
-app.Run();
+    app.MapOpenApi();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "FizzBuzz API"));
+
+    app.UseHttpsRedirection();
+
+    var v1 = app.MapGroup("/api/v1").WithTags("v1");
+    v1.MapFizzBuzzEndpoints();
+    v1.MapStatisticsEndpoints();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "FizzBuzz API terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
