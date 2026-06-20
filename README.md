@@ -64,6 +64,34 @@ Network configuration:
 - The [`docker-compose.yml`](docker-compose.yml) publishes that port on `8080` of the host
   machine (`ports: "8080:8080"`).
 
+## Rate limiting
+
+The API is protected by ASP.NET Core's built-in rate limiter. Each
+client is identified by its **IP address**, and requests beyond the allowance get a
+`429 Too Many Requests`.
+
+| Scope | Limit | Applies to |
+|-------|-------|------------|
+| Global (fallback) | **100 requests / minute per IP** | Every endpoint, including `/api/v1/statistics` |
+| `fizzbuzz` policy | **20 requests / minute per IP** | `GET /api/v1/fizzbuzz` only |
+
+The stricter policy targets `/fizzbuzz` because it is the expensive endpoint: a single call can
+generate up to 50&nbsp;000 entries **and** write to Redis. The global limiter is a safety net for
+everything else.
+
+Both use a **fixed window** algorithm: the allowance resets at the start of each one-minute window.
+Health check endpoints (`/health/*`) are **exempt** — `UseRateLimiter()` is wired *after* the
+health endpoints so orchestrator probes are never throttled.
+
+The configuration lives in [`FizzBuzz/RateLimiting.cs`](FizzBuzz/RateLimiting.cs); the `fizzbuzz`
+policy is attached to the endpoint via `.RequireRateLimiting(...)`.
+
+> **Note: single instance only.** The limiter counts requests **in memory, per process**. If the
+> API is scaled to several replicas, each one keeps its own counters, so the effective limit is
+> multiplied by the number of instances. A distributed setup would handle rate limiting at the
+> **infrastructure / gateway level** (API gateway, ingress, reverse proxy...), where a
+> single component sees all traffic before it reaches any replica.
+
 ## Health checks
 
 The API exposes two health endpoints, following the standard **liveness / readiness** split:
