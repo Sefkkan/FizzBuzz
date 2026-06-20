@@ -17,7 +17,8 @@ app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "FizzBuz
 
 app.UseHttpsRedirection();
 
-app.MapFizzBuzzEndpoints();
-app.MapStatisticsEndpoints();
+var v1 = app.MapGroup("/api/v1").WithTags("v1");
+v1.MapFizzBuzzEndpoints();
+v1.MapStatisticsEndpoints();
 
 app.Run();
