@@ -1,6 +1,7 @@
 using FizzBuzz.Application;
 using FizzBuzz.Domain;
 using FizzBuzz.Infrastructure;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
 
 namespace FizzBuzz;
@@ -26,9 +27,21 @@ public static class DependencyInjection
 
         services.AddSingleton<IFizzBuzzStatisticsRepository, RedisFizzBuzzStatisticsRepository>();
 
-        services.AddHealthChecks()
-            .AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
+        AddCustomHealthChecks(services);
 
         return services;
+    }
+
+    private static void AddCustomHealthChecks(IServiceCollection services)
+    {
+        services.AddHealthChecks().AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
+        
+        services.AddSingleton<HealthReportCache>();
+        services.AddSingleton<IHealthCheckPublisher, CachingHealthCheckPublisher>();
+        services.Configure<HealthCheckPublisherOptions>(options =>
+        {
+            options.Delay = TimeSpan.Zero;
+            options.Period = TimeSpan.FromSeconds(10);
+        });
     }
 }
