@@ -69,7 +69,7 @@ try
 
     app.UseRateLimiter();
 
-    var v1 = app.MapGroup("/api/v1").WithTags("v1");
+    var v1 = app.MapGroup("/api/v1").WithTags("fizzbuzz");
     v1.MapFizzBuzzEndpoints();
     v1.MapStatisticsEndpoints();
 

@@ -8,10 +8,12 @@ public static class HealthCheckEndpoints
     public static IEndpointRouteBuilder MapHealthCheckEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/health/live", (HealthReportCache cache) => Build(cache, _ => false))
-            .WithName("HealthLive");
+            .WithName("HealthLive")
+            .WithTags("healthcheck");
 
         app.MapGet("/health/ready", (HealthReportCache cache) => Build(cache, entry => entry.Tags.Contains("ready")))
-            .WithName("HealthReady");
+            .WithName("HealthReady")
+            .WithTags("healthcheck");
 
         return app;
     }
