@@ -23,7 +23,16 @@ public class FizzBuzzUseCase : IFizzBuzzUseCase
     {
         _logger.LogDebug("Executing FizzBuzz use case for Limit={Limit}", request.Limit);
 
-        var result = _fizzBuzzService.GenerateSequence(request);
+        using var activity = AppDiagnostics.ActivitySource.StartActivity("fizzbuzz.usecase");
+        activity?.SetTag("fizzbuzz.limit", request.Limit);
+
+        List<string> result;
+        using (var generation = AppDiagnostics.ActivitySource.StartActivity("fizzbuzz.generate"))
+        {
+            result = _fizzBuzzService.GenerateSequence(request);
+            generation?.SetTag("fizzbuzz.count", result.Count);
+        }
+
         await _statisticsRepository.AddAsync(request, cancellationToken);
 
         _logger.LogDebug("Statistics hit recorded for FizzBuzz request with Limit={Limit}", request.Limit);

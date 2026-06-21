@@ -5,6 +5,7 @@ using FizzBuzz.Presentation.Statistics;
 using FizzBuzz.Presentation.Utils;
 using Microsoft.OpenApi;
 using Serilog;
+using Serilog.Sinks.OpenTelemetry;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -14,10 +15,24 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    var serviceName = builder.Configuration.GetServiceName();
+    var otlpEndpoint = builder.Configuration.GetOtlpEndpoint();
+
     builder.Services.AddSerilog((services, configuration) => configuration
         .ReadFrom.Configuration(builder.Configuration)
         .ReadFrom.Services(services)
-        .Enrich.FromLogContext());
+        .Enrich.FromLogContext()
+        .WriteTo.OpenTelemetry(options =>
+        {
+            options.Endpoint = otlpEndpoint;
+            options.Protocol = OtlpProtocol.Grpc;
+            options.ResourceAttributes = new Dictionary<string, object>
+            {
+                ["service.name"] = serviceName
+            };
+        }));
+
+    builder.Services.AddObservability(builder.Configuration);
 
     builder.Services.AddOpenApi(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
     builder.Services.AddProblemDetails();

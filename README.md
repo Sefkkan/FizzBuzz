@@ -127,3 +127,86 @@ healthcheck:
   retries: 3
   start_period: 10s
 ```
+
+## Observability
+
+The API is fully instrumented with **[OpenTelemetry](https://opentelemetry.io/)** and emits the
+three signals **logs, traces and metrics** over a single **OTLP** stream. Because the app only
+ever talks OTLP, the visualization backend is interchangeable: nothing in the code changes whether
+the data ends up in Aspire, Grafana, or anything else.
+
+### Architecture: one stream in, fan-out
+
+The application sends a **single** OTLP stream to a central **OpenTelemetry Collector**, which then
+**fans the data out** to every backend. The app has just one endpoint to configure
+(`OpenTelemetry__OtlpEndpoint`), and adding/removing a backend is a Collector-only change.
+
+
+| Signal | Routed to |
+|--------|-----------|
+| Traces | Aspire **+** Tempo |
+| Metrics | Aspire **+** Prometheus |
+| Logs | Aspire **+** Loki |
+
+The Collector configuration lives in
+[`observability/otel-collector-config.yaml`](observability/otel-collector-config.yaml); each backend
+has its own config under [`observability/`](observability/).
+
+### Two UIs: Aspire (dev) vs Grafana (prod-like)
+
+| | [Aspire Dashboard](http://localhost:18888) | [Grafana](http://localhost:3000) |
+|--|--|--|
+| **Purpose** | **Local development.** Zero-config, all three signals in one .NET-native UI. | **Representation of what runs in production**: the Grafana + Tempo/Loki/Prometheus stack. |
+| **Backing store** | In-memory (data is lost on restart) | Persistent backends (Tempo, Loki, Prometheus) |
+| **Use it to...** | Quickly inspect a request while coding | Build dashboards, query history, mimic the prod setup |
+
+Both are fed by the same Collector, so a given request shows up in **both** UIs simultaneously.
+
+> Grafana's datasources (Prometheus, Tempo, Loki) and the dashboard below are **provisioned
+> automatically** from [`observability/grafana/provisioning/`](observability/grafana/provisioning/) nothing to click on first launch.
+
+### What is instrumented
+
+- **Automatic** (via OpenTelemetry instrumentation libraries):
+  - Incoming HTTP requests: duration, status, route
+  - Outgoing HTTP calls
+  - **Redis** commands
+  - .NET runtime metrics (GC, threads, allocations)
+- **Logs**: the existing Serilog pipeline keeps writing to the console **and** exports to OTLP via
+  the `Serilog.Sinks.OpenTelemetry` sink, log entries are correlated to the trace that produced them.
+- **Custom spans**: [`FizzBuzzUseCase`](FizzBuzz/Application/FizzBuzzUseCase.cs) emits its own spans
+  through a dedicated [`ActivitySource`](FizzBuzz/Application/AppDiagnostics.cs):
+  - `fizzbuzz.usecase` the whole use case (sequence computation + redis)
+  - `fizzbuzz.generate`  **the sequence computation only**
+
+  This makes it obvious where time goes on a `GET /api/v1/fizzbuzz`: the width of `fizzbuzz.generate`
+  (pure CPU) vs. the Redis span (I/O) vs. the rest of the HTTP span (serialization, middleware):
+
+### Metrics dashboard
+
+A ready-made **"FizzBuzz – HTTP & Runtime"** dashboard (request rate, average latency, p95/p99,
+error rate, active requests) is provisioned in Grafana. Open
+[Grafana](http://localhost:3000) -> *Dashboards* -> folder *FizzBuzz*.
+
+![FizzBuzz HTTP & Runtime dashboard in Grafana](Docs/grafana_dashboard.png)
+
+### Traces
+
+The same trace is visible in both tools. In **Aspire** (local development):
+
+![FizzBuzz trace in the Aspire Dashboard](Docs/aspire_traces.png)
+
+And in **Grafana** via Tempo:
+
+![FizzBuzz trace in Grafana / Tempo](Docs/grafana_traces.png)
+
+### URLs
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| Swagger UI | http://localhost:8080/swagger | |
+| **Aspire Dashboard** | http://localhost:18888 | Logs + traces + metrics, dev |
+| **Grafana** | http://localhost:3000 | Anonymous admin, dashboards provisioned |
+
+Prometheus, Tempo and Loki are **internal** to the Compose network (not published to the host); you
+reach them through Grafana's *Explore* view.

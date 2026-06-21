@@ -1,0 +1,47 @@
+# Central collector: receives OTLP from the app and fans out to Aspire + the Grafana stack.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  # Aspire Dashboard: accepts all 3 signals over OTLP
+  otlp/aspire:
+    endpoint: aspire-dashboard:18889
+    tls:
+      insecure: true
+
+  # Tempo: traces
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Loki: logs (native OTLP ingestion)
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+  # Prometheus: exposes metrics for scraping
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/aspire, otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/aspire, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/aspire, otlphttp/loki]
