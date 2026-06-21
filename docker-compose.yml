@@ -11,10 +11,18 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD}"
       OpenTelemetry__OtlpEndpoint: "http://otel-collector:4317"
+      Keycloak__Authority: "http://localhost:8081/realms/fizzbuzz"
+      Keycloak__MetadataAddress: "http://keycloak:8080/realms/fizzbuzz/.well-known/openid-configuration"
+      Keycloak__Audience: "fizzbuzz-api"
+      Keycloak__RequireHttpsMetadata: "false"
+      Keycloak__AuthorizationUrl: "http://localhost:8081/realms/fizzbuzz/protocol/openid-connect/auth"
+      Keycloak__TokenUrl: "http://localhost:8081/realms/fizzbuzz/protocol/openid-connect/token"
     depends_on:
       redis:
         condition: service_healthy
       otel-collector:
+        condition: service_started
+      keycloak:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
@@ -69,9 +77,25 @@ services:
     image: grafana/grafana:11.6.0
     container_name: fizzbuzz-grafana
     environment:
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_SERVER_ROOT_URL: "http://localhost:3000"
+      # SSO via Keycloak (OIDC). Only fizzbuzz.admin gets a real role (Grafana Admin);
+      # everyone else is mapped to the built-in "None" role: they are signed in (so the
+      # "Sign out" button works) but have no access to any dashboard.
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "Keycloak"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ${GRAFANA_OAUTH_CLIENT_SECRET}
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid email profile roles"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "http://localhost:8081/realms/fizzbuzz/protocol/openid-connect/auth"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://keycloak:8080/realms/fizzbuzz/protocol/openid-connect/token"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "http://keycloak:8080/realms/fizzbuzz/protocol/openid-connect/userinfo"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(realm_access.roles[*], 'fizzbuzz.admin') && 'Admin' || 'None'"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
       GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_OAUTH_AUTO_LOGIN: "true"
+      # RP-initiated logout: signing out of Grafana also ends the Keycloak SSO session,
+      # so the next sign-in really asks for credentials again (no silent re-login).
+      GF_AUTH_SIGNOUT_REDIRECT_URL: "http://localhost:8081/realms/fizzbuzz/protocol/openid-connect/logout?client_id=grafana&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Flogin"
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
     ports:
@@ -80,6 +104,27 @@ services:
       - prometheus
       - tempo
       - loki
+      - keycloak
+    restart: unless-stopped
+
+  # Keycloak identity provider: http://localhost:8081 (admin console at /admin)
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: fizzbuzz-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      # Public (browser-facing) base URL; this is the issuer baked into tokens.
+      KC_HOSTNAME: "http://localhost:8081"
+      # Let backchannel callers (the API, Grafana) reach Keycloak by the host they
+      # actually used (keycloak:8080) while keeping the public issuer above.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     restart: unless-stopped
 
   # Traces

@@ -3,6 +3,7 @@ using FizzBuzz.Presentation.FizzBuzz;
 using FizzBuzz.Presentation.HealthChecks;
 using FizzBuzz.Presentation.Statistics;
 using FizzBuzz.Presentation.Utils;
+using FizzBuzz.Security;
 using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
@@ -34,22 +35,37 @@ try
 
     builder.Services.AddObservability(builder.Configuration);
 
-    builder.Services.AddOpenApi(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
+    builder.Services.AddOpenApi(options =>
+    {
+        options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+        options.AddDocumentTransformer<OAuthSecuritySchemeTransformer>();
+    });
     builder.Services.AddProblemDetails();
     builder.Services.AddFizzBuzz(builder.Configuration);
     builder.Services.AddFizzBuzzRateLimiting();
+    builder.Services.AddKeycloakAuthentication(builder.Configuration);
+    builder.Services.AddFizzBuzzAuthorization();
 
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
 
     app.MapOpenApi();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "FizzBuzz API"));
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "FizzBuzz API");
+        options.OAuthClientId(app.Configuration["Keycloak:SwaggerClientId"]);
+        options.OAuthUsePkce();
+        options.OAuthScopes("openid", "profile");
+    });
 
     app.UseHttpsRedirection();
 
-    // Health check probes must stay outside rate limiting.
+    // Health check probes must stay outside rate limiting and authentication.
     app.MapHealthCheckEndpoints();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     app.UseRateLimiter();
 
@@ -67,3 +83,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Exposed so the integration test project can boot the app through WebApplicationFactory.
+public partial class Program;

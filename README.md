@@ -46,6 +46,78 @@ Run the tests:
 ```bash
 dotnet test
 ```
+## Authentication & authorization
+
+The API and Grafana are protected by **[Keycloak](https://www.keycloak.org/)**
+(OAuth2 / OpenID Connect). Keycloak runs as part of the Docker Compose stack at
+**http://localhost:8081** and **auto-imports** a ready-to-use realm and users on first start
+(`keycloak/realm-export.json`), no manual configuration required.
+
+### Single sign-on (one session for Swagger and Grafana)
+
+This is true **SSO**: Keycloak is a single, shared identity provider for the whole realm,
+so the **same login session is reused for both the API/Swagger and Grafana**. Sign in once
+for example via the Swagger **Authorize** button,  and opening Grafana logs you in
+**automatically, without re-entering your credentials** (and the other way around). Each
+app still receives its own tokens, what they share is the Keycloak authentication session.
+
+Conversely, the single sign-out wired on Grafana ends that shared session, so after signing
+out of Grafana you will be prompted to authenticate again on Swagger too.
+
+### Actors
+
+| Actor | Keycloak client | Flow                                        |
+|-------|-----------------|---------------------------------------------|
+| Swagger UI | `fizzbuzz-swagger` | Authorization Code                          |
+| FizzBuzz API | *(resource server)*  | validates the JWT (issuer, audience, roles) |
+| Grafana | `grafana` |  Authorization Code (OIDC SSO)              |
+
+### Roles and protected endpoints
+
+| Realm role | Grants |
+|------------|--------|
+| `fizzbuzz.user` | `GET /api/v1/fizzbuzz` |
+| `fizzbuzz.admin` | `GET /api/v1/fizzbuzz` **and** `GET /api/v1/statistics` |
+
+`/health/*` (probes) and `/swagger` + `/openapi/v1.json` (so you can log in) stay
+**public**. Everything under `/api/v1` requires a valid token with the right role.
+
+### Test users
+
+| Username | Password | Roles |
+|----------|----------|-------|
+| `admin_user` | `admin_user` | `fizzbuzz.user`, `fizzbuzz.admin` |
+| `user` | `user` | `fizzbuzz.user` |
+
+### Logging in through Swagger
+
+1. Open the Swagger UI: **http://localhost:8080/swagger**
+2. Click **Authorize**, then sign in to Keycloak (e.g. as `admin_user`).
+3. Requests now carry the bearer token. As `user`, `GET /api/v1/statistics` returns
+   **403 Forbidden** (no `fizzbuzz.admin` role); as `admin_user` it returns **200**.
+
+### Logging in to Grafana
+
+Open **http://localhost:3000** → you are redirected to Keycloak → sign in. Only the
+**`fizzbuzz.admin`** role grants real access (mapped to Grafana **Admin**). Everyone
+else (e.g. `user`, who only has `fizzbuzz.user`) is mapped to Grafana's built-in
+**`None`** role: they are signed in but see **no dashboards**. They are *not* hard-denied
+on purpose, keeping a session means the **Sign out** button stays available to them
+(which then triggers the single sign-out below). So `admin_user` gets full access, while
+`user` can sign in, sees nothing, and can still sign out cleanly.
+
+**Logout (single sign-out).** Signing out of Grafana also terminates the Keycloak SSO
+session (RP-initiated logout via `GF_AUTH_SIGNOUT_REDIRECT_URL` → Keycloak's
+`end_session_endpoint`), so the next sign-in prompts for credentials again
+instead of logging back in silently. The `grafana` client registers
+`http://localhost:3000/*` as a valid post-logout redirect URI for this.
+
+### Secrets
+
+`.env` (git-ignored) holds the Keycloak admin credentials and the Grafana OAuth client
+secret; see `.env.example`. The Grafana client secret must match the one in
+`keycloak/realm-export.json` (the committed value is a **dev-only** placeholder).
+
 ## Docker details
 
 The [`Dockerfile`](Dockerfile) uses a **multi-stage build**:
@@ -204,9 +276,10 @@ And in **Grafana** via Tempo:
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| Swagger UI | http://localhost:8080/swagger | |
+| Swagger UI | http://localhost:8080/swagger | Authenticated via Keycloak (see [Authentication & authorization](#authentication--authorization)) |
 | **Aspire Dashboard** | http://localhost:18888 | Logs + traces + metrics, dev |
-| **Grafana** | http://localhost:3000 | Anonymous admin, dashboards provisioned |
+| **Grafana** | http://localhost:3000 | SSO via Keycloak, dashboards provisioned |
+| **Keycloak** | http://localhost:8081 | Identity provider (admin console at `/admin`) |
 
 Prometheus, Tempo and Loki are **internal** to the Compose network (not published to the host); you
 reach them through Grafana's *Explore* view.

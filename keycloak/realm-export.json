@@ -1,0 +1,125 @@
+{
+  "realm": "fizzbuzz",
+  "enabled": true,
+  "sslRequired": "none",
+  "loginTheme": "keycloak",
+  "roles": {
+    "realm": [
+      {
+        "name": "fizzbuzz.user",
+        "description": "Can call the FizzBuzz business endpoints"
+      },
+      {
+        "name": "fizzbuzz.admin",
+        "description": "Can call FizzBuzz endpoints and read statistics"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "fizzbuzz-swagger",
+      "name": "Swagger UI",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/swagger/oauth2-redirect.html",
+        "http://localhost:5135/swagger/oauth2-redirect.html",
+        "https://localhost:7134/swagger/oauth2-redirect.html"
+      ],
+      "webOrigins": [
+        "http://localhost:8080",
+        "http://localhost:5135",
+        "https://localhost:7134"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "fizzbuzz-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "fizzbuzz-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "grafana",
+      "name": "Grafana",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "dev-grafana-oauth-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/login/generic_oauth"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:3000/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin_user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin_user@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin_user",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "fizzbuzz.user",
+        "fizzbuzz.admin"
+      ]
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Standard",
+      "lastName": "User",
+      "email": "user@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "fizzbuzz.user"
+      ]
+    }
+  ]
+}

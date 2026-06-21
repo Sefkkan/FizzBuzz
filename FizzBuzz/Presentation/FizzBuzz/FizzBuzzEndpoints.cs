@@ -1,6 +1,7 @@
 using FizzBuzz.Application;
 using FizzBuzz.Domain;
 using FizzBuzz.Presentation.Utils;
+using FizzBuzz.Security;
 
 namespace FizzBuzz.Presentation.FizzBuzz;
 
@@ -10,7 +11,8 @@ public static class FizzBuzzEndpoints
     {
         app.MapGet("/fizzbuzz", HandleFizzBuzz)
             .WithName("GetFizzBuzz")
-            .RequireRateLimiting(RateLimiting.FizzBuzzPolicy);
+            .RequireRateLimiting(RateLimiting.FizzBuzzPolicy)
+            .RequireAuthorization(AuthorizationPolicies.FizzBuzzUser);
 
         return app;
     }
